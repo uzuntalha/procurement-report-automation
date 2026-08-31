@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# User-generated outputs (keep the committed sample, ignore ad-hoc runs)
+outputs/*.pptx
+!outputs/sample_report.pptx
+
+# Streamlit
+.streamlit/secrets.toml
