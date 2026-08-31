@@ -47,25 +47,26 @@ def main() -> None:
 
     # ---- 1 · load workbook --------------------------------------------- #
     st.subheader(i18n.t("upload", ui))
-    use_sample = st.toggle(i18n.t("use_sample", ui), value=True)
+    up = st.file_uploader("xlsx", type=["xlsx"], label_visibility="collapsed")
+    with open(SAMPLE_PATH, "rb") as _f:
+        st.download_button(
+            i18n.t("download_template", ui), _f.read(),
+            file_name="sample_procurement_workbook.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
     dataset = None
     try:
-        if use_sample:
-            dataset = _dataset_from_sample()
+        if up is not None:
+            dataset = _dataset_from_bytes(up.getvalue())
+            st.success("✅ " + i18n.t("uploaded_ok", ui))
         else:
-            up = st.file_uploader("xlsx", type=["xlsx"],
-                                  label_visibility="collapsed")
-            if up is not None:
-                dataset = _dataset_from_bytes(up.getvalue())
+            dataset = _dataset_from_sample()
+            st.info("ℹ️ " + i18n.t("using_sample", ui))
     except ValidationError as exc:
         st.error(f"⚠️ {exc}")
         st.stop()
     except Exception as exc:  # noqa: BLE001
         st.error(f"⚠️ Unexpected error while reading the workbook: {exc}")
-        st.stop()
-
-    if dataset is None:
-        st.info("⬆️ " + i18n.t("upload", ui))
         st.stop()
 
     opts = week_options(dataset)

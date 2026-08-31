@@ -24,6 +24,14 @@ _T = {
                "tr": "1 · Satın alma workbook'u yükleyin (.xlsx)"},
     "use_sample": {"en": "Use the bundled sample workbook",
                    "tr": "Hazır örnek workbook'u kullan"},
+    "download_template": {"en": "⬇️ Download a sample workbook (template)",
+                          "tr": "⬇️ Örnek workbook indir (şablon)"},
+    "uploaded_ok": {"en": "Using your uploaded workbook.",
+                    "tr": "Yüklediğiniz workbook kullanılıyor."},
+    "using_sample": {"en": "No file uploaded — using the bundled sample workbook. "
+                           "Upload your own .xlsx above to run it on real data.",
+                     "tr": "Dosya yüklenmedi — hazır örnek workbook kullanılıyor. "
+                           "Kendi .xlsx dosyanızı yukarıdan yükleyerek çalıştırabilirsiniz."},
     "select_week": {"en": "2 · Select reporting week",
                     "tr": "2 · Raporlanacak haftayı seçin"},
     "report_lang": {"en": "3 · Report language",
