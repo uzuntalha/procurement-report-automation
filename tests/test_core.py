@@ -58,7 +58,8 @@ def _row(po, d, buyer, sup, unit_price, qty, cur):
         "Miktar": qty, "Birim Fiyat": unit_price,
         "Liste Fiyatı": unit_price * 1.10, "Tutar": unit_price * qty,
         "Para Birimi": cur, "Ödeme Yöntemi Kodu": "PM01",
-        "Onay Tipi": "Limit İçi", "Durum": "Açık", "Aciliyet": "Normal",
+        "Onay Tipi": "Limit İçi", "Sözleşme Kapsamı": "Sözleşmeli",
+        "Durum": "Açık", "Aciliyet": "Normal", "Kusurlu Teslim": "Hayır",
     }
 
 

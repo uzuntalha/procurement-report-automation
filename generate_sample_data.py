@@ -252,6 +252,12 @@ def build_transactions(rng, buyers, suppliers, fx, n_rows) -> pd.DataFrame:
         pay_code = rng.choice(pay_codes)
         urgency = rng.choice(["Normal", "Acil"], p=[0.85, 0.15])
 
+        # Contract coverage decided at PO level, correlated with supplier segment
+        # (strategic suppliers are mostly on-contract; new ones often off-contract).
+        p_contract = {"Stratejik": 0.95, "Onaylı": 0.85,
+                      "Yeni": 0.35}[supplier["Tedarikçi Segmenti"]]
+        contract = "Sözleşmeli" if rng.random() < p_contract else "Sözleşmesiz"
+
         n_lines = int(rng.integers(1, 5))
         for line in range(1, n_lines + 1):
             if row_i >= n_rows:
@@ -284,6 +290,10 @@ def build_transactions(rng, buyers, suppliers, fx, n_rows) -> pd.DataFrame:
                         if amount_try > buyer["Onay Limiti (TRY)"]
                         else "Limit İçi")
 
+            # defective delivery only meaningful for closed lines (~5%)
+            defect = ("Evet" if (status == "Kapalı" and rng.random() < 0.05)
+                      else "Hayır")
+
             rows.append({
                 "PR No": f"PR-2026-{pr_counter:05d}",
                 "PO No": f"PO-2026-{po_counter:05d}",
@@ -305,8 +315,10 @@ def build_transactions(rng, buyers, suppliers, fx, n_rows) -> pd.DataFrame:
                 "Para Birimi": currency,
                 "Ödeme Yöntemi Kodu": pay_code,
                 "Onay Tipi": approval,
+                "Sözleşme Kapsamı": contract,
                 "Durum": status,
                 "Aciliyet": urgency,
+                "Kusurlu Teslim": defect,
             })
 
     df = pd.DataFrame(rows)
@@ -323,9 +335,11 @@ def main() -> None:
     parser.add_argument("--out", type=str,
                         default="data/sample_procurement_2026.xlsx",
                         help="output .xlsx path")
+    parser.add_argument("--seed", type=int, default=SEED,
+                        help="random seed (change it for a different dataset)")
     args = parser.parse_args()
 
-    rng = np.random.default_rng(SEED)
+    rng = np.random.default_rng(args.seed)
 
     buyers = build_buyers(rng)
     suppliers = build_suppliers(rng)

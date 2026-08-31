@@ -200,3 +200,25 @@ procurement-report-automation/
 - Estimated "hours saved" figure for the README impact line (reasonable assumption,
   labeled as an estimate).
 - Fictional-but-plausible names for suppliers / buyers in the generator.
+
+---
+
+## 11. v2 enhancements (2026-08-31, after web research on enterprise CPO reports)
+
+Motivation: v1 weekly comparison was too thin (only KPI-card deltas) and the deck
+lacked the enterprise metrics a real CPO report carries. Researched standard
+procurement KPIs/benchmarks (Ivalua, Suplari, Precoro, NIGP) and added:
+
+- **Data model:** two new transaction fields — `Sözleşme Kapsamı`
+  (Sözleşmeli/Sözleşmesiz) and `Kusurlu Teslim` (Evet/Hayır). Generator seeds
+  ~80% on-contract and ~5% defect-on-closed. Added `--seed` CLI flag.
+- **Week-over-week everywhere:** new **Week-over-Week Scorecard** slide (6 KPIs
+  this vs last week) + Spend-by-Type turned into this-vs-last grouped bars.
+- **New enterprise slides:** Contract Compliance & Maverick Spend (with
+  best-in-class benchmark gauges: SUM ≥80%, maverick ≤10%), Supplier Scorecard
+  (spend × OTD × defect × segment table), Payment Terms & DPO. Supplier Pareto
+  slide gained a tail-spend caption.
+- **Deck grew 13 → 17 slides.** All verified end-to-end (tests pass, EN/TR build,
+  live app redeployed). README previews re-rendered.
+- **Robustness proven:** pipeline tested against a different-seed workbook AND an
+  English-headers workbook (exercises the TR/EN column mapping).

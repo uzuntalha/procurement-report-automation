@@ -242,3 +242,91 @@ class Charts:
                 fontsize=13, fontweight="bold", color=INK)
         ax.set_title(label, fontsize=9.5, color=INK)
         ax.set(aspect="equal")
+
+    # -- 9. week-over-week scorecard (2x3 mini paired bars) -------------- #
+    def wow_scorecard(self, wow, name):
+        fig, axes = plt.subplots(2, 3, figsize=(9.4, 4.9))
+
+        def f(v, kind):
+            if kind == "try":
+                return fmt_try(v)
+            if kind == "int":
+                return f"{v:,.0f}"
+            return f"{v:.0%}"
+
+        for ax, (key, cur, prev, kind) in zip(axes.flat, wow):
+            bars = ax.bar([0, 1], [prev, cur], color=[LIGHT, ACCENT], width=0.6)
+            ax.set_xticks([0, 1])
+            ax.set_xticklabels([i18n.t("last_week", self.lang),
+                                i18n.t("this_week", self.lang)], fontsize=8)
+            ax.set_title(i18n.t(key, self.lang), fontsize=9.5, color=INK, pad=16)
+            for b, v in zip(bars, [prev, cur]):
+                ax.text(b.get_x() + b.get_width() / 2, v, f(v, kind),
+                        ha="center", va="bottom", fontsize=8.5, color=INK)
+            if prev:
+                d = (cur - prev) / prev
+                ax.text(0.5, 1.0, f"{'▲' if d >= 0 else '▼'} {abs(d):.0%}",
+                        transform=ax.transAxes, ha="center", va="bottom",
+                        fontsize=9.5, color=(POS if d >= 0 else NEG))
+            ax.set_yticks([])
+            for s in ("top", "right", "left"):
+                ax.spines[s].set_visible(False)
+            ax.margins(y=0.30)
+        fig.tight_layout()
+        return self._save(fig, name)
+
+    # -- 10. grouped horizontal bars: this week vs last week ------------- #
+    def grouped_hbar(self, df, name):
+        d = df.iloc[::-1]
+        idx = [self._tv(i) for i in d.index]
+        y = range(len(d))
+        h = 0.38
+        fig, ax = plt.subplots(figsize=FIGSIZE)
+        ax.barh([i + h / 2 for i in y], d["prev"].values, height=h,
+                color=LIGHT, label=i18n.t("last_week", self.lang))
+        ax.barh([i - h / 2 for i in y], d["cur"].values, height=h,
+                color=ACCENT, label=i18n.t("this_week", self.lang))
+        ax.set_yticks(list(y))
+        ax.set_yticklabels(idx)
+        self._try_axis(ax, "x")
+        ax.grid(axis="x", color=LIGHT, linewidth=0.8)
+        ax.set_axisbelow(True)
+        ax.legend(loc="lower right", frameon=False, fontsize=10)
+        fig.tight_layout()
+        return self._save(fig, name)
+
+    # -- 11. contract compliance panel (donut + benchmark gauges) -------- #
+    def contract_panel(self, model, name):
+        cs = model["contract_spend"]
+        comp = model["compliance"]
+        fig = plt.figure(figsize=FIGSIZE)
+        gs = fig.add_gridspec(2, 2, width_ratios=[1.4, 1])
+        axd = fig.add_subplot(gs[:, 0])
+        vals = cs.values
+        labels = [self._tv(i) for i in cs.index]
+        colors = [ACCENT if i == "Sözleşmeli" else NEG for i in cs.index]
+        wedges, _ = axd.pie(vals, colors=colors, startangle=90,
+                            wedgeprops=dict(width=0.42, edgecolor="white"))
+        tot = vals.sum()
+        axd.legend(wedges, [f"{l} · {v/tot:.0%}" for l, v in zip(labels, vals)],
+                   loc="upper center", bbox_to_anchor=(0.5, 0.02),
+                   frameon=False, fontsize=9.5)
+        axd.set(aspect="equal")
+        self._gauge_bm(fig.add_subplot(gs[0, 1]), comp["sum_share"],
+                       comp["sum_benchmark"],
+                       i18n.t("spend_under_mgmt", self.lang), ACCENT, "≥")
+        self._gauge_bm(fig.add_subplot(gs[1, 1]), comp["maverick_share"],
+                       comp["maverick_benchmark"],
+                       i18n.t("maverick", self.lang), NEG, "≤")
+        fig.tight_layout()
+        return self._save(fig, name)
+
+    def _gauge_bm(self, ax, frac, bm, label, color, op):
+        ax.pie([min(frac, 1), max(1 - frac, 0)], colors=[color, LIGHT],
+               startangle=90, counterclock=False,
+               wedgeprops=dict(width=0.35, edgecolor="white"))
+        ax.text(0, 0, f"{frac:.0%}", ha="center", va="center",
+                fontsize=13, fontweight="bold", color=INK)
+        ax.set_title(f"{label}\n({i18n.t('target', self.lang)} {op}{bm:.0%})",
+                     fontsize=8.5, color=INK)
+        ax.set(aspect="equal")

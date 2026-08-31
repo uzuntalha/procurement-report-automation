@@ -32,7 +32,7 @@ def build_dataset(data: dict[str, pd.DataFrame]) -> dict:
         suppliers[["Tedarikçi Kodu", "Tedarikçi Adı", "Ülke", "Menşei",
                    "Tedarikçi Segmenti"]],
         on="Tedarikçi Kodu", how="left")
-    tx = tx.merge(payments[["Ödeme Yöntemi Kodu", "Yöntem"]],
+    tx = tx.merge(payments[["Ödeme Yöntemi Kodu", "Yöntem", "Vade (gün)"]],
                   on="Ödeme Yöntemi Kodu", how="left")
 
     # --- FX -> TRY using nearest-date rate per currency -------------------- #
@@ -75,6 +75,7 @@ def build_dataset(data: dict[str, pd.DataFrame]) -> dict:
         tx["Zamanında"] = pd.NA
 
     tx["Acil"] = tx["Aciliyet"].eq("Acil")
+    tx["Kusurlu"] = tx.get("Kusurlu Teslim", "Hayır").eq("Evet")
 
     return {"tx": tx, "budget": data["Bütçe"]}
 
@@ -222,6 +223,73 @@ def compute_report_model(dataset: dict, week_start: date, week_end: date) -> dic
         "fx_share": (1 - share(cur, "Para Birimi", "TRY")) if total else 0.0,
         "hhi": float(((sup / total) ** 2).sum()) if total else 0.0,
     }
+
+    # --- Week-over-week scorecard ------------------------------------------ #
+    def mshare(df, col, val):
+        s = _spend(df)
+        return (_spend(df[df[col] == val]) / s) if s else 0.0
+
+    model["wow"] = [
+        ("kpi_spend", _spend(cur), _spend(prev), "try"),
+        ("kpi_pos", cur["PO No"].nunique(), prev["PO No"].nunique(), "int"),
+        ("kpi_savings", float(cur["Tasarruf (TRY)"].sum()),
+         float(prev["Tasarruf (TRY)"].sum()), "try"),
+        ("kpi_approval", mshare(cur, "Onay Tipi", "Yönetim Onayı"),
+         mshare(prev, "Onay Tipi", "Yönetim Onayı"), "pct"),
+        ("kpi_foreign", mshare(cur, "Menşei", "Yurt Dışı"),
+         mshare(prev, "Menşei", "Yurt Dışı"), "pct"),
+        ("kpi_emergency", (cur["Acil"].mean() if len(cur) else 0.0),
+         (prev["Acil"].mean() if len(prev) else 0.0), "pct"),
+    ]
+
+    # spend by purchase type — this week vs last week
+    prev_ptype = prev.groupby("Satın Alma Türü")["Tutar (TRY)"].sum()
+    model["ptype_compare"] = pd.DataFrame({
+        "cur": model["by_ptype"],
+        "prev": prev_ptype.reindex(model["by_ptype"].index).fillna(0.0),
+    })
+
+    # --- Contract compliance / maverick spend / spend-under-management ------ #
+    model["contract_spend"] = cur.groupby("Sözleşme Kapsamı")["Tutar (TRY)"].sum()
+    on_contract = _spend(cur[cur["Sözleşme Kapsamı"] == "Sözleşmeli"])
+    model["compliance"] = {
+        "sum_share": (on_contract / total) if total else 0.0,       # spend under mgmt
+        "maverick_share": (1 - on_contract / total) if total else 0.0,
+        "maverick_benchmark": 0.10,   # best-in-class < 10%
+        "sum_benchmark": 0.80,        # best-in-class > 80%
+    }
+
+    # --- Supplier scorecard (top suppliers × OTD × defect × segment) -------- #
+    scols = []
+    for name, g in cur.groupby("Tedarikçi Adı"):
+        delivered = g[g["Zamanında"].notna()]
+        scols.append({
+            "supplier": name,
+            "spend": _spend(g),
+            "otd": (float(delivered["Zamanında"].mean()) if len(delivered) else None),
+            "defect": (float(g["Kusurlu"].mean())),
+            "segment": g["Tedarikçi Segmenti"].iloc[0],
+        })
+    sc = pd.DataFrame(scols).sort_values("spend", ascending=False).head(8)
+    model["supplier_scorecard"] = sc.reset_index(drop=True)
+
+    # --- Tail spend --------------------------------------------------------- #
+    if total and len(sup):
+        cum = sup.cumsum() / total
+        n80 = int((cum < 0.8).sum()) + 1
+        tail_count = int(len(sup) - n80)
+        tail_share = float(sup.iloc[n80:].sum() / total) if n80 < len(sup) else 0.0
+    else:
+        n80, tail_count, tail_share = 0, 0, 0.0
+    model["tail"] = {"n80": n80, "total_suppliers": int(len(sup)),
+                     "tail_count": tail_count, "tail_share": tail_share}
+
+    # --- Payment terms / DPO ------------------------------------------------ #
+    if total:
+        w = cur["Tutar (TRY)"]
+        model["dpo"] = float((cur["Vade (gün)"] * w).sum() / w.sum())
+    else:
+        model["dpo"] = 0.0
 
     # --- Highlights & exceptions ------------------------------------------- #
     po = (cur.groupby("PO No").agg(

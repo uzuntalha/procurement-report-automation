@@ -62,6 +62,7 @@ _T = {
                  "tr": "Yurt İçi / Yurt Dışı Tedarik"},
     "s_catpay": {"en": "Category & Payment Method Breakdown",
                  "tr": "Kategori ve Ödeme Yöntemi Kırılımı"},
+    "s_category": {"en": "Spend by Category", "tr": "Kategoriye Göre Harcama"},
     "s_trend": {"en": "Weekly Spend Trend (Year-to-Date)",
                 "tr": "Haftalık Harcama Trendi (Yıl Başından Bugüne)"},
     "s_savings": {"en": "Negotiated Savings", "tr": "Müzakere Tasarrufu"},
@@ -69,6 +70,12 @@ _T = {
     "s_risk": {"en": "Risk — Supplier Concentration & FX Exposure",
                "tr": "Risk — Tedarikçi Yoğunlaşması ve Döviz Riski"},
     "s_highlights": {"en": "Highlights & Exceptions", "tr": "Dikkat Çekenler ve İstisnalar"},
+    "s_wow": {"en": "Week-over-Week Scorecard", "tr": "Haftalık Karşılaştırma Karnesi"},
+    "s_contract": {"en": "Contract Compliance & Maverick Spend",
+                   "tr": "Sözleşme Uyumu ve Maverick Harcama"},
+    "s_scorecard": {"en": "Supplier Scorecard", "tr": "Tedarikçi Karnesi"},
+    "s_dpo": {"en": "Payment Terms & Days Payable (DPO)",
+              "tr": "Ödeme Vadeleri ve DPO"},
 
     # --- KPI labels -------------------------------------------------------- #
     "kpi_spend": {"en": "Total Spend", "tr": "Toplam Harcama"},
@@ -90,6 +97,22 @@ _T = {
     "others": {"en": "Others", "tr": "Diğer"},
     "no_data": {"en": "No data for the selected week.",
                 "tr": "Seçilen hafta için veri yok."},
+    "this_week": {"en": "This week", "tr": "Bu hafta"},
+    "last_week": {"en": "Last week", "tr": "Geçen hafta"},
+    "spend_under_mgmt": {"en": "Spend Under Mgmt", "tr": "Yönetilen Harcama"},
+    "maverick": {"en": "Maverick Spend", "tr": "Maverick Harcama"},
+    "target": {"en": "target", "tr": "hedef"},
+    "kpi_dpo": {"en": "DPO (avg. days payable)", "tr": "DPO (ort. ödeme günü)"},
+    "days": {"en": "days", "tr": "gün"},
+    "tail_headline": {"en": "Supplier tail", "tr": "Tedarikçi kuyruğu"},
+    "tail_body": {"en": "{n80} suppliers make up 80% of spend · the tail is "
+                        "{tail} suppliers at {share:.0%} of spend",
+                  "tr": "Harcamanın %80'i {n80} tedarikçide · kuyrukta "
+                        "{tail} tedarikçi, harcamanın {share:.0%}'i"},
+    "col_otd": {"en": "OTD", "tr": "Zam. Teslim"},
+    "col_defect": {"en": "Defect", "tr": "Kusur"},
+    "col_segment": {"en": "Segment", "tr": "Segment"},
+    "col_spend": {"en": "Spend (TRY)", "tr": "Harcama (TRY)"},
     "h_top_po": {"en": "Largest orders this week", "tr": "Bu haftanın en büyük siparişleri"},
     "col_po": {"en": "PO", "tr": "PO"},
     "col_supplier": {"en": "Supplier", "tr": "Tedarikçi"},
@@ -118,6 +141,9 @@ _VALUES_EN = {
     # approval
     "Limit İçi": "Within Limit",
     "Yönetim Onayı": "Management Approval",
+    # contract coverage
+    "Sözleşmeli": "On-contract",
+    "Sözleşmesiz": "Maverick",
     # status
     "Kapalı": "Closed",
     "Açık": "Open",

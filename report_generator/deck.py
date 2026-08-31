@@ -8,6 +8,7 @@ display strings come from ``i18n`` in the selected report language.
 from __future__ import annotations
 
 import io
+import math
 from dataclasses import dataclass
 from datetime import date
 
@@ -108,14 +109,18 @@ class DeckBuilder:
         pic.left = Inches(box.x) + (bw - w) // 2
         pic.top = Inches(box.y) + (bh - h) // 2
 
-    def _chart_slide(self, title, images, page):
+    def _chart_slide(self, title, images, page, caption=None):
         slide = self._slide()
         self._title_band(slide, title)
+        img_h = 5.5 if not caption else 5.0
         if len(images) == 1:
-            self._place_image(slide, images[0], Box(0.7, 1.25, 11.93, 5.5))
+            self._place_image(slide, images[0], Box(0.7, 1.25, 11.93, img_h))
         else:
-            self._place_image(slide, images[0], Box(0.4, 1.3, 6.2, 5.4))
-            self._place_image(slide, images[1], Box(6.75, 1.3, 6.2, 5.4))
+            self._place_image(slide, images[0], Box(0.4, 1.3, 6.2, img_h - 0.1))
+            self._place_image(slide, images[1], Box(6.75, 1.3, 6.2, img_h - 0.1))
+        if caption:
+            self._text(slide, Box(0.7, 1.3 + img_h + 0.1, 11.9, 0.5), caption,
+                       13, _ACCENT, bold=True, align=PP_ALIGN.CENTER)
         self._footer(slide, page)
         return slide
 
@@ -224,6 +229,59 @@ class DeckBuilder:
                    note, 13, _ACCENT, bold=True)
         self._footer(slide, page)
 
+    def _scorecard_slide(self, model, page):
+        slide = self._slide()
+        self._title_band(slide, i18n.t("s_scorecard", self.lang))
+        df = model["supplier_scorecard"]
+        headers = [i18n.t(h, self.lang) for h in
+                   ("col_supplier", "col_spend", "col_otd", "col_defect",
+                    "col_segment")]
+        rows = len(df) + 1
+        table = slide.shapes.add_table(
+            rows, 5, Inches(0.7), Inches(1.35),
+            Inches(11.9), Inches(0.5 * rows)).table
+        for c, w in enumerate([4.4, 2.4, 1.7, 1.6, 1.8]):
+            table.columns[c].width = Inches(w)
+        for c, h in enumerate(headers):
+            cell = table.cell(0, c)
+            cell.text = h
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = _INK
+            p = cell.text_frame.paragraphs[0]
+            p.font.size, p.font.bold, p.font.color.rgb = Pt(12), True, _WHITE
+        for i, (_, row) in enumerate(df.iterrows(), start=1):
+            otd_v = row["otd"]
+            otd = ("—" if otd_v is None or (isinstance(otd_v, float)
+                                            and math.isnan(otd_v))
+                   else f"{otd_v:.0%}")
+            vals = [str(row["supplier"]), fmt_try(row["spend"]), otd,
+                    f"{row['defect']:.0%}", i18n.tv(row["segment"], self.lang)]
+            for c, v in enumerate(vals):
+                cell = table.cell(i, c)
+                cell.text = v
+                p = cell.text_frame.paragraphs[0]
+                p.font.size, p.font.color.rgb = Pt(11), _INK
+                if c == 0:
+                    cell.fill.solid()
+                    cell.fill.fore_color.rgb = _LIGHT
+        self._footer(slide, page)
+
+    def _dpo_slide(self, model, page):
+        slide = self._slide()
+        self._title_band(slide, i18n.t("s_dpo", self.lang))
+        img = self.charts.hbar(model["payment_spend"], "payment", WITHIN,
+                               value_labels=False)
+        self._place_image(slide, img, Box(0.4, 1.5, 7.7, 5.0))
+        bx, by, cw, ch = 8.5, 2.4, 4.2, 2.3
+        self._rect(slide, Box(bx, by, cw, ch), _LIGHT)
+        self._rect(slide, Box(bx, by, 0.09, ch), _ACCENT)
+        self._text(slide, Box(bx + 0.25, by + 0.25, cw - 0.4, 0.9),
+                   i18n.t("kpi_dpo", self.lang), 13, _GREY, bold=True)
+        self._text(slide, Box(bx + 0.22, by + 1.0, cw - 0.4, 1.1),
+                   f"{model['dpo']:.0f} {i18n.t('days', self.lang)}",
+                   34, _INK, bold=True)
+        self._footer(slide, page)
+
     # ------------------------------------------------------------------ #
     # orchestration
     # ------------------------------------------------------------------ #
@@ -233,36 +291,44 @@ class DeckBuilder:
 
         self._cover(model, generated_on)
         self._exec_summary(model, 2)
-
+        self._chart_slide(i18n.t("s_wow", self.lang),
+                          [c.wow_scorecard(model["wow"], "wow")], 3)
         self._chart_slide(i18n.t("s_ptype", self.lang),
-                          [c.hbar(model["by_ptype"], "ptype", ACCENT)], 3)
+                          [c.grouped_hbar(model["ptype_compare"], "ptype")], 4)
         self._chart_slide(i18n.t("s_buyer", self.lang),
-                          [c.stacked_buyer(model["buyer_stack"], "buyer")], 4)
+                          [c.stacked_buyer(model["buyer_stack"], "buyer")], 5)
         self._chart_slide(i18n.t("s_approval", self.lang),
                           [c.donut(model["approval_spend"], "approval",
-                                   center=f"{model['kpis']['approval']['value']:.0%}\nmgmt")], 5)
-        self._chart_slide(i18n.t("s_supplier", self.lang),
-                          [c.pareto(model["supplier_pareto"], "supplier")], 6)
+                                   center=f"{model['kpis']['approval']['value']:.0%}\nmgmt")], 6)
+        self._chart_slide(i18n.t("s_contract", self.lang),
+                          [c.contract_panel(model, "contract")], 7)
+        tail = model["tail"]
+        self._chart_slide(
+            i18n.t("s_supplier", self.lang),
+            [c.pareto(model["supplier_pareto"], "supplier")], 8,
+            caption=i18n.t("tail_body", self.lang).format(
+                n80=tail["n80"], tail=tail["tail_count"],
+                share=tail["tail_share"]))
+        self._scorecard_slide(model, 9)
         self._chart_slide(i18n.t("s_origin", self.lang),
                           [c.donut(model["origin_spend"], "origin"),
                            c.hbar(model["country_spend"], "country", ACCENT,
-                                  value_labels=False)], 7)
-        self._chart_slide(i18n.t("s_catpay", self.lang),
+                                  value_labels=False)], 10)
+        self._chart_slide(i18n.t("s_category", self.lang),
                           [c.hbar(model["category_spend"], "category", ACCENT,
-                                  value_labels=False),
-                           c.hbar(model["payment_spend"], "payment", WITHIN,
-                                  value_labels=False)], 8)
+                                  value_labels=False)], 11)
+        self._dpo_slide(model, 12)
         self._chart_slide(i18n.t("s_trend", self.lang),
-                          [c.trend(model["trend"], model["trend_marker"], "trend")], 9)
+                          [c.trend(model["trend"], model["trend_marker"], "trend")], 13)
         self._chart_slide(i18n.t("s_savings", self.lang),
                           [c.waterfall(model["savings_waterfall"], "waterfall"),
                            c.hbar(model["savings_by_ptype"], "savings_type", POS,
-                                  value_labels=False)], 10)
+                                  value_labels=False)], 14)
         self._chart_slide(i18n.t("s_budget", self.lang),
-                          [c.budget_actual(model["budget_actual"], "budget")], 11)
+                          [c.budget_actual(model["budget_actual"], "budget")], 15)
         self._chart_slide(i18n.t("s_risk", self.lang),
-                          [c.risk_panel(model, "risk")], 12)
-        self._highlights(model, 13)
+                          [c.risk_panel(model, "risk")], 16)
+        self._highlights(model, 17)
 
         buf = io.BytesIO()
         self.prs.save(buf)

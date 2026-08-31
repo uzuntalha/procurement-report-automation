@@ -1,6 +1,6 @@
 # Procurement Weekly Report Automation
 
-Turn a procurement workbook into a **13-slide executive PowerPoint** — in one click, in English or Turkish.
+Turn a procurement workbook into a **17-slide executive PowerPoint** — in one click, in English or Turkish.
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?logo=streamlit&logoColor=white)
@@ -29,19 +29,19 @@ Turn a procurement workbook into a **13-slide executive PowerPoint** — in one 
 
 ## What the deck looks like
 
-_Real slides rendered from the generated sample report (Meridian week of 20–26 Apr 2026):_
+_Real slides rendered from the generated sample report (week of 20–26 Apr 2026):_
 
-| Executive summary | Buyer — within-limit vs. management approval |
+| Executive summary | Week-over-week scorecard |
 |---|---|
-| ![Executive summary](docs/slides/slide-02.png) | ![Buyer approval](docs/slides/slide-04.png) |
+| ![Executive summary](docs/slides/slide-02.png) | ![Week over week](docs/slides/slide-03.png) |
 
-| Supplier concentration (Pareto) | Negotiated savings (waterfall) |
+| Contract compliance & maverick spend | Supplier scorecard |
 |---|---|
-| ![Supplier Pareto](docs/slides/slide-06.png) | ![Savings](docs/slides/slide-10.png) |
+| ![Contract compliance](docs/slides/slide-07.png) | ![Supplier scorecard](docs/slides/slide-09.png) |
 
-| Budget vs. actual | Highlights & exceptions |
+| Negotiated savings (waterfall) | Highlights & exceptions |
 |---|---|
-| ![Budget vs actual](docs/slides/slide-11.png) | ![Highlights](docs/slides/slide-13.png) |
+| ![Savings](docs/slides/slide-14.png) | ![Highlights](docs/slides/slide-17.png) |
 
 📎 **Sample output:** [`outputs/sample_report.pptx`](outputs/sample_report.pptx)
 
@@ -50,7 +50,9 @@ _Real slides rendered from the generated sample report (Meridian week of 20–26
 ## Features
 
 - **Any week in, deck out.** Upload a workbook, pick a week, download the report. The tool is not hard-wired to one file — it validates and processes whatever conforming workbook you give it.
-- **13 slides, each with the right visual** — KPI cards, stacked bars, a Pareto, donuts, a YTD trend line, a savings waterfall, budget-vs-actual, a risk panel, and a highlights table.
+- **17 slides, each with the right visual** — KPI cards, week-over-week scorecard, stacked/grouped bars, a Pareto, donuts, benchmark gauges, a YTD trend line, a savings waterfall, budget-vs-actual, a supplier scorecard and highlights tables.
+- **Week-over-week comparison across the deck** — a dedicated scorecard (6 KPIs this week vs. last) plus this-week-vs-last-week bars, not just a single week's snapshot.
+- **Enterprise KPIs & benchmarks** — Spend Under Management, maverick / off-contract spend (vs. best-in-class <10%), DPO, supplier scorecard (OTD + defect rate), and tail-spend concentration.
 - **Business rules in code**, not baked into the data: approval type is derived from each buyer's limit; every line is converted to TRY using the date-appropriate FX rate; savings, lead-time and on-time-delivery are computed.
 - **Bilingual (EN / TR)** — both the interface and the generated report; report language is independently selectable, English by default.
 - **Robust input handling** — schema validation with clear, user-friendly errors, plus EN/TR column-header mapping.
@@ -78,16 +80,16 @@ _Real slides rendered from the generated sample report (Meridian week of 20–26
 
 | Sheet | Purpose | Key fields |
 |---|---|---|
-| **Satın Almalar** | Transactions (fact table) | PO/PR, dates, buyer & supplier codes, category, qty, unit/list price, amount, currency, payment method, status, urgency |
+| **Satın Almalar** | Transactions (fact table) | PO/PR, dates, buyer & supplier codes, category, qty, unit/list price, amount, currency, payment method, contract coverage, status, urgency, defective delivery |
 | **Tedarikçiler** | Supplier master | code, name, country, domestic/foreign, segment |
 | **Sorumlular & Limitler** | Buyer master | code, name, department, **purchase type**, **approval limit** |
 | **Ödeme Yöntemleri** | Payment method master | code, method, term (days) |
 | **Kur Tablosu** | Daily FX rates | date, currency, TRY rate |
 | **Bütçe** | Monthly budget | period, purchase type, budget (TRY) |
 
-### The 13 slides
+### The 17 slides
 
-Cover · Executive Summary (KPI cards) · Spend by Purchase Type · Buyer — Within-Limit vs. Management Approval · Approval Type · Supplier Pareto · Domestic/Foreign · Category & Payment · YTD Trend · Savings (waterfall) · Budget vs. Actual · Risk (concentration + FX) · Highlights & Exceptions.
+Cover · Executive Summary (KPI cards) · **Week-over-Week Scorecard** · Spend by Purchase Type (this vs. last week) · Buyer — Within-Limit vs. Management Approval · Approval Type · **Contract Compliance & Maverick Spend** · Supplier Pareto (+ tail spend) · **Supplier Scorecard** · Domestic/Foreign · Spend by Category · **Payment Terms & DPO** · YTD Trend · Savings (waterfall) · Budget vs. Actual · Risk (concentration + FX) · Highlights & Exceptions.
 
 ---
 
