@@ -6,7 +6,8 @@ Turn a procurement workbook into a **13-slide executive PowerPoint** — in one 
 ![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?logo=streamlit&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-2E8B6F.svg)
 
-> **🔗 Live demo:** _deploy in ~2 minutes on Streamlit Community Cloud — see [Deploy](#deploy). Paste your URL here once live._
+> ### 🔗 **[Live demo → procurement-report-automation.streamlit.app](https://procurement-report-automation.streamlit.app)**
+> Try it now — no install needed. The bundled sample workbook is preloaded; pick a week, choose a language, and download the deck.
 
 ---
 
