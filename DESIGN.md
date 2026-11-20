@@ -1,7 +1,9 @@
 # DESIGN.md — procurement-report-automation
 
 > Shared-understanding spec, agreed via a structured grilling session.
-> Last updated: 2026-08-31. Nothing here is built yet — this is the plan of record.
+> Last updated: 2026-08-31. **Status: built and shipped (v2, 17 slides).** Live demo:
+> https://procurement-report-automation.streamlit.app — this document records the
+> design decisions; §11 lists the v2 changes on top of the original plan.
 
 ---
 
@@ -15,12 +17,11 @@ for any selected week. Portfolio piece aimed at **strategy / consulting** roles.
 
 ## 1. Why this project exists (the story / CV message)
 
-- **Observation (real):** During an internship in a defense-industry Supply Chain
-  & Procurement department, a weekly management PowerPoint is prepared **manually**
-  from large Excel files — who bought how much within their own approval limit vs.
+- **Observation:** In corporate procurement teams, a weekly management PowerPoint
+  is commonly prepared **manually** from large Excel files — who bought how much within their own approval limit vs.
   what went to management approval, which suppliers, domestic/foreign split, etc.
 - **Insight:** This recurring manual reporting is automatable end-to-end.
-- **Constraint:** No access to the real template or data (defense sensitivity).
+- **Constraint:** No real company template or data is used.
   → Everything in this project is **100% synthetic / fictional**. No real data,
     no real template, no company branding.
 - **Positioning:** NOT "I became a software developer." Instead:
@@ -38,11 +39,11 @@ for any selected week. Portfolio piece aimed at **strategy / consulting** roles.
 | 1 | Primary CV message | **End-to-end automation / data pipeline**, with a light web shell | The impressive part is automating repetitive work; UI is just the visible skin |
 | 2 | Form factor | **Local web app**, logic in a separate Python module | Demoable + keeps the "pipeline" message strong |
 | 3 | Web layer | **Streamlit** (thin UI over pure logic module) | Python-only, fastest path to a clickable demo; energy goes to parsing + PPT |
-| 4 | Input data source | **Synthetic data generator** committed to repo | Proves "variable input", solves defense sensitivity, shows domain understanding |
+| 4 | Input data source | **Synthetic data generator** committed to repo | Proves "variable input", keeps real company data out of the repo, shows domain understanding |
 | 5 | Data model | **Multi-sheet workbook (6 sheets)**, ~1 year of data | "Comprehensive" ≠ just longer; real ERP-like structure with master + fact sheets |
 | 6 | "Satın Alma Türü" dimension | Attached at **buyer level** (in Sorumlular sheet) | Buyers belong to a desk/group; normalized model |
 | 7 | Reporting period | **Selected week + prev-week comparison + YTD cumulative** | Executive value lives in comparison & trend, not a single number |
-| 8 | Deck size | **13 slides** (see §5) | User confirmed 13 is not too long |
+| 8 | Deck size | **17 slides** (see §5; 13 in v1) | Expanded in v2 with enterprise CPO metrics |
 | 9 | Chart rendering | **All charts via matplotlib**, embedded as images | Only way to get varied, data-appropriate viz (Pareto/histogram/waterfall) with one consistent design system. Trade-off accepted: static (not editable in PPT) |
 | 10 | Chart variety | **Each slide uses the visual type that fits its data** | No single uniform chart type across the deck |
 | 11 | Language | **Fully bilingual EN/TR, English default** | International consulting target |
@@ -108,27 +109,33 @@ Banka Havalesi / Çek), `Vade (gün)`.
 
 ---
 
-## 5. Output deck — 13 slides
+## 5. Output deck — 17 slides
 
 Period logic (C): **selected week + vs previous week + YTD cumulative context.**
-Each slide uses the visualization that fits its data. One consistent palette/font
-(design via the `dataviz` skill). Rendered EN or TR based on report-language selector.
+Each slide uses the visualization that fits its data. One consistent palette/font.
+Rendered EN or TR based on the report-language selector. (v1 shipped 13 slides;
+v2 added slides 3, 7, 9 and 12 — see §11.)
 
 | # | Slide | Visualization |
 |---|-------|---------------|
 | 1 | Cover | Title, week, date range |
 | 2 | Executive Summary | KPI cards (total spend TRY, PO count, domestic/foreign %, limit vs approval %, WoW ▲▼; small KPIs: emergency-buy %, OTD %) |
-| 3 | Spend by Purchase Type (Satın Alma Türü) | Sorted horizontal bar |
-| 4 | By Buyer (Sorumlu) | Stacked bar (within-limit vs management-approval) — **key metric** |
-| 5 | Approval Type analysis | Donut + small cross-tab by type |
-| 6 | Supplier analysis | Pareto (bars + cumulative line) |
-| 7 | Domestic / Foreign | Donut + country bar |
-| 8 | Category + Payment Method | Treemap/bar + bar (two small breakdowns) |
-| 9 | Weekly Trend (YTD) | Line chart, selected week marked |
-| 10 | Savings | Waterfall (or bar) |
-| 11 | Budget vs Actual | Bullet chart / budget-vs-actual bar |
-| 12 | Risk (concentration + FX) | Pareto + gauge/donut |
-| 13 | Highlights / Exceptions | Formatted table (biggest POs, anomalies, new suppliers) |
+| 3 | Week-over-Week Scorecard | 6 KPIs, this week vs last week |
+| 4 | Spend by Purchase Type | Grouped bars, this vs last week |
+| 5 | By Buyer — Within-Limit vs Management Approval | Stacked bar — **key metric** |
+| 6 | Approval Type analysis | Donut + small cross-tab by type |
+| 7 | Contract Compliance & Maverick Spend | Benchmark gauges (SUM ≥80%, maverick ≤10%) |
+| 8 | Supplier analysis | Pareto (bars + cumulative line) + tail-spend caption |
+| 9 | Supplier Scorecard | Table: spend × OTD × defect × segment |
+| 10 | Domestic / Foreign | Donut + country bar |
+| 11 | Spend by Category | Bar |
+| 12 | Payment Terms & DPO | Bar + DPO KPI |
+| 13 | Weekly Trend (YTD) | Line chart, selected week marked |
+| 14 | Savings | Waterfall |
+| 15 | Budget vs Actual | Budget-vs-actual bar |
+| 16 | Risk (concentration + FX) | Pareto + gauge/donut |
+| 17 | Highlights / Exceptions | Formatted table (biggest POs, anomalies, new suppliers) |
+
 
 ---
 
@@ -140,7 +147,7 @@ Each slide uses the visualization that fits its data. One consistent palette/fon
    TR/EN column headers both accepted via a mapping table. No fuzzy matching.
 3. User picks a **week / date range** and a **report language (EN/TR)**.
 4. Tool joins sheets, derives approval type from limits, converts to TRY via rates,
-   computes all metrics, renders 13 matplotlib charts, assembles the `.pptx`.
+   computes all metrics, renders the matplotlib charts, assembles the `.pptx`.
 5. User downloads the deck.
 
 ---
@@ -155,7 +162,7 @@ procurement-report-automation/
     parsing.py            # load + schema validation + TR/EN column mapping
     metrics.py            # all calculations (approval type, TRY, savings, OTD, budget...)
     charts.py             # matplotlib chart builders (one consistent palette)
-    deck.py               # python-pptx assembly, 13 slides
+    deck.py               # python-pptx assembly, 17 slides
     i18n.py               # EN/TR label + categorical-value dictionaries
   data/
     sample_procurement_2026.xlsx   # pre-generated 1-year sample
@@ -193,7 +200,7 @@ procurement-report-automation/
 
 ---
 
-## 10. Open items for build time (not blockers)
+## 10. Build-time items (all resolved in v1)
 
 - Exact neutral color palette + font (decide via `dataviz` skill).
 - Optional small neutral monogram/logo mark for the deck header.

@@ -73,7 +73,7 @@ _Real slides rendered from the generated sample report (week of 20–26 Apr 2026
 - **`parsing.py`** — loads the workbook, validates the 6 sheets & required columns, maps English headers to canonical ones, coerces types. Raises friendly `ValidationError`s.
 - **`metrics.py`** — joins the sheets, converts to TRY (nearest-date FX), **derives** approval type from limits, computes savings / lead-time / OTD, then builds every aggregation for the selected week with previous-week and year-to-date context.
 - **`charts.py`** — one consistent executive design system (navy + blue palette); every visual rendered with matplotlib.
-- **`deck.py`** — assembles the 13 slides; titles, KPI cards and the highlights table are native PowerPoint shapes, charts are embedded images.
+- **`deck.py`** — assembles the 17 slides; titles, KPI cards and the highlights table are native PowerPoint shapes, charts are embedded images.
 - **`app.py`** — a thin Streamlit shell wiring the UI to the pipeline.
 
 ### Input data model (6-sheet workbook)
